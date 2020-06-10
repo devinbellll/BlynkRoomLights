@@ -9,9 +9,9 @@
 
 Servo lightswitch;
 int servo_pin = 3;
-unsigned int on = 700;
+unsigned int swon = 700;
 unsigned int idle = 1300;
-unsigned int off = 2300;
+unsigned int swoff = 2300;
 
 int RedPin = 10; //Arduino driving pin for Red
 int GreenPin = 11; //Arduino driving pin for Green
@@ -36,7 +36,9 @@ void LightsOff(void);
 void LightsOn(void);
 
 // Global variables
-String mode = "";
+unsigned int mode = 0;
+unsigned int manData = 0;
+
 String rxstring = "";
 bool RECEIVEDLINE = false;
 
@@ -93,46 +95,69 @@ ISR (USART_RX_vect)
 
 void dataHandler(String com)
 {
-
-
-
+  String data = "";
+  for(int i=0; i<sizeof(com); i++)
+  {
+    if(com[i] == '\n')
+    {
+      break;
+    }
+    mode = (int)com[0];
+    if(i>1)
+    {
+      data += com[i];
+    }
+    manData = data.toInt();
+  }
 
   switch (mode)
   {
-    case "off" :
+    case 0 :
+      off();
       break;
 
-    case "normal" :
+    case 1 :
+      normal();
       break;
 
-    case "party" :
+    case 2 :
+      party();
       break;
 
-    case "theater" :
+    case 3 :
+      theater();
       break;
 
-    case "sex" :
+    case 4 :
+      sex();
       break;
 
-    case "manual" :
+    case 5 :
+      manual();
       break;
     default :
       break;
   }
+}
 
+void setColour(int red, int green, int blue)
+{
+  analogWrite(RedPin, red);
+  analogWrite(GreenPin, green);
+  analogWrite(BluePin, blue);
 }
 
 
 void LightsOn(void)
 {
-  lightswitch.writeMicroseconds(on);
+  lightswitch.writeMicroseconds(swon);
   delay(500);
   lightswitch.writeMicroseconds(idle);
 }
 
 void LightsOff(void)
 {
-  lightswitch.writeMicroseconds(off);
+  lightswitch.writeMicroseconds(swoff);
   delay(500);
   lightswitch.writeMicroseconds(idle);
 }
@@ -140,14 +165,14 @@ void LightsOff(void)
 void off(void)
 {
   LightsOff();
-  LEDs.something
+  setColour(0, 0, 0);
   while (mode == "off") {}
 }
 
 void normal(void)
 {
   LightsOn();
-  LEDs.something
+  setColour(255, 255, 255);
   while (mode == "normal") {}
 }
 
@@ -158,32 +183,32 @@ void party(void)
   {
     for (int i = 0; i < 255; i++) //Changing Red brightness
     {
-      setColor(i, 0, 0);
+      setColour(i, 0, 0);
       delay (5);
     }
     for (int i = 0; i < 255; i++) //Changing Green brightness
     {
-      setColor(0, i, 0);
+      setColour(0, i, 0);
       delay (5);
     }
     for (int i = 0; i < 255; i++) //Changing Blue brightness
     {
-      setColor(0, 0, i);
+      setColour(0, 0, i);
       delay (5);
     }
     for (int i = 0; i < 255; i++)
     {
-      setColor(i, 0, 255 - i);
+      setColour(i, 0, 255 - i);
       delay (5);
     }
     for (int i = 0; i < 255; i++)
     {
-      setColor(255 - i, i, 0);
+      setColour(255 - i, i, 0);
       delay (5);
     }
     for (int i = 0; i < 255; i++)
     {
-      setColor(0, 255 - i, i);
+      setColour(0, 255 - i, i);
       delay (5);
     }
   }
@@ -192,7 +217,6 @@ void party(void)
 void theater(void)
 {
   LightsOff();
-  LEDs.something
   while (mode == "theater")
   {
 
@@ -215,12 +239,4 @@ void manual(void)
   {
 
   }
-}
-
-
-void setColour(int red, int green, int blue)
-{
-  analogWrite(RedPin, red);
-  analogWrite(GreenPin, green);
-  analogWrite(BluePin, blue);
 }

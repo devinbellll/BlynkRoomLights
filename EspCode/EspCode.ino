@@ -21,10 +21,12 @@ WidgetTerminal terminal(V5);
 
 unsigned long alarm_time;
 unsigned long current_time;
-int OnOff;
+int master; 
+String mode;
 int AlarmOnOff;
 int alarmHours;
 int alarmMin;
+
 
 
 //Master On/Off switch
@@ -33,28 +35,23 @@ BLYNK_WRITE(V0)
 {
   terminal.clear();
   
-  OnOff = param.asInt(); // assigning incoming value from pin V1 to a variable
+  master = param.asInt(); // assigning incoming value from pin V1 to a variable
   // You can also use:
   // String i = param.asStr();
   // double d = param.asDouble();
-  Serial.print("Master On/Off value is: ");
-  if (OnOff == 1) {
-    Serial.println("On");
-  }
-  if (OnOff == 2) {
-    Serial.println("Off");
-  } 
   terminal.print("Master: ");
-  if (OnOff == 1) {
+  if (master == 1) {
+    
+    Serial.print(mode + " 0");
     terminal.println("On");
   }
-  if (OnOff == 2) {
+  if (master == 2) {
+    
+    Serial.print("off 0");
     terminal.println("Off");
   } 
   terminal.println();
   terminal.flush();
-  
-  Serial.println();
 }
 
 //Alarm On/Off Switch
@@ -66,15 +63,15 @@ BLYNK_WRITE(V1)
   // You can also use:
   // String i = param.asStr();
   // double d = param.asDouble();
-  Serial.print("Alarm On/Off value is: ");
-  if (AlarmOnOff == 1) {
-    Serial.println("Alarm On");
-    Serial.println(String("Alarm Time: ") + alarm_time);
-    Serial.println(String("Current Time: ") + current_time);
-  }
-  if (AlarmOnOff == 2) {
-    Serial.println("Alarm Off");
-  }
+//  Serial.print("Alarm On/Off value is: ");
+//  if (AlarmOnOff == 1) {
+//    Serial.println("Alarm On");
+//    Serial.println(String("Alarm Time: ") + alarm_time);
+//    Serial.println(String("Current Time: ") + current_time);
+//  }
+//  if (AlarmOnOff == 2) {
+//    Serial.println("Alarm Off");
+//  }
 
   terminal.print("Alarm: ");
   if (AlarmOnOff == 1) {
@@ -90,11 +87,9 @@ BLYNK_WRITE(V1)
   
   terminal.println();
   terminal.flush();
-  
-  Serial.println();
 }
 
-
+// Alarm time setter
 BLYNK_WRITE(V2) {
   terminal.clear();
   TimeInputParam t(param);
@@ -112,7 +107,7 @@ BLYNK_WRITE(V2) {
                    t.getStartMinute());
                    
     alarm_time = (t.getStartHour())*100 + t.getStartMinute();
-    Serial.println(String("Alarm Time Set: ") + alarm_time);
+    //Serial.println(String("Alarm Time Set: ") + alarm_time);
   }
   else
   {
@@ -120,9 +115,48 @@ BLYNK_WRITE(V2) {
   }
 
   terminal.println();
-  terminal.flush();
-  Serial.println();
+  terminal.flush();  
+}
+
+// Mode setter switch
+BLYNK_WRITE(V3)
+{
+  int modeSet;
+  terminal.clear();
   
+  modeSet = param.asInt(); // assigning incoming value from pin V1 to a variable
+  // You can also use:
+  // String i = param.asStr();
+  // double d = param.asDouble();
+  terminal.print("Mode set to: ");
+  if (modeSet == 1) {
+    mode = "normal";
+    terminal.println("Normal");
+  }
+  else if (modeSet == 2) {
+    mode = "party";
+    terminal.println("Party");
+  }
+  else if (modeSet == 3) {
+    mode = "theater";
+    terminal.println("Theater");
+  }
+  else if (modeSet == 4) {
+    mode = "sex";
+    terminal.println("Sex");
+  }
+  else {
+    mode = "manual";
+    terminal.println("Manual");
+  }
+
+  if (master == 1) {
+    Serial.print(mode + " 0");
+  }
+  
+  
+  terminal.println();
+  terminal.flush();
 }
 
 
@@ -146,10 +180,11 @@ void loop()
   Blynk.run();
   
   timeClient.update();
+  
   current_time = (timeClient.getHours())*100 + timeClient.getMinutes();
-
   if ((current_time == alarm_time) && (AlarmOnOff == 1))
   {
-    Serial.println("ALARM ALARM ALARM");
+    Serial.print("normal 0");
+    AlarmOnOff = 2;
   }
 }

@@ -7,8 +7,8 @@
 
 void setup() {
 
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW);
+  pinMode(10, OUTPUT);
+  analogWrite(10, 255);
   UCSR0B = (1 << RXEN0) | (1 << TXEN0);   // Turn on the transmission and reception circuitry
   UCSR0C = (1 << UCSZ00) | (1 << UCSZ01); // Use 8-bit character sizes
 
@@ -50,11 +50,11 @@ void loop() {
   if(RECEIVEDLINE) 
   {
     RECEIVEDLINE = false;
-    digitalWrite(13, HIGH);
+    analogWrite(10, 0);
 
     if(rxstring == "test")
     {
-      digitalWrite(13, LOW);
+      analogWrite(10, 255);
     }
     rxstring = "";
   }

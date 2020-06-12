@@ -1,17 +1,20 @@
+//#include <Servo.h>
 
-#include <avr/io.h>
-#include <avr/interrupt.h>
+
+//#include <avr/io.h>
+//#include <avr/interrupt.h>
 
 #define USART_BAUDRATE 9600
 #define MYUBRR (((F_CPU / (USART_BAUDRATE * 16UL))) - 1)
 
-#include <Servo.h>
 
-Servo lightswitch;
-int servo_pin = 3;
-unsigned int swon = 700;
-unsigned int idle = 1300;
-unsigned int swoff = 2300;
+//int servo_pin = 3;
+//unsigned int swon = 700;
+//unsigned int idle = 1300;
+//unsigned int swoff = 2300;
+//bool LIGHTSON = false;
+//
+//Servo lightswitch;
 
 int RedPin = 10; //Arduino driving pin for Red
 int GreenPin = 11; //Arduino driving pin for Green
@@ -24,7 +27,6 @@ void setColour(int red, int green, int blue);
 void dataHandler(String command);
 
 // Mode functions
-void manual(void);
 void sex(void);
 void theater(void);
 void party(void);
@@ -36,20 +38,20 @@ void LightsOff(void);
 void LightsOn(void);
 
 // Global variables
-unsigned int mode = 0;
-unsigned int manData = 0;
-
+volatile String mode = "";
 String rxstring = "";
 bool RECEIVEDLINE = false;
+
 
 void setup()
 {
   pinMode(RedPin, OUTPUT); //Init Arduino driving pins
   pinMode(GreenPin, OUTPUT);
   pinMode(BluePin, OUTPUT);
+  
+//  pinMode(servo_pin, OUTPUT);
+//  lightswitch.attach(servo_pin);
 
-  pinMode(servo_pin, OUTPUT);
-  lightswitch.attach(servo_pin);
   UCSR0B = (1 << RXEN0) | (1 << TXEN0);   // Turn on the transmission and reception circuitry
   UCSR0C = (1 << UCSZ00) | (1 << UCSZ01); // Use 8-bit character sizes
 
@@ -63,13 +65,30 @@ void setup()
 
 void loop()
 {
-  if (RECEIVEDLINE)
+  if (mode == "off")
   {
-    String com = rxstring;
-    RECEIVEDLINE = false;
-    rxstring = "";
-    dataHandler(com);
+    off();
   }
+  else if (mode == "normal")
+  {
+    normal();
+  }
+  else if (mode == "party")
+  {
+
+    party();
+  }
+
+  else if (mode == "theater")
+  {
+    theater();
+  }
+  else
+  {
+    sex();
+  }
+
+
 }
 
 
@@ -79,10 +98,9 @@ ISR (USART_RX_vect)
   char ReceivedByte;
   ReceivedByte = UDR0; // Fetch the received byte value into the variable "ByteReceived"
 
-  if (ReceivedByte == '\n')
+  if (ReceivedByte == ' ')
   {
     RECEIVEDLINE = true;
-    rxstring += ReceivedByte;
   }
   else
   {
@@ -91,54 +109,18 @@ ISR (USART_RX_vect)
   UDR0 = ReceivedByte; // Echo back the received byte back to the computer
   //digitalWrite(13, HIGH);
 
-}
-
-void dataHandler(String com)
-{
-  String data = "";
-  for(int i=0; i<sizeof(com); i++)
+  if (RECEIVEDLINE)
   {
-    if(com[i] == '\n')
-    {
-      break;
-    }
-    mode = (int)com[0];
-    if(i>1)
-    {
-      data += com[i];
-    }
-    manData = data.toInt();
+    RECEIVEDLINE = false;
+    mode = rxstring;
+    rxstring = "";
   }
 
-  switch (mode)
-  {
-    case 0 :
-      off();
-      break;
-
-    case 1 :
-      normal();
-      break;
-
-    case 2 :
-      party();
-      break;
-
-    case 3 :
-      theater();
-      break;
-
-    case 4 :
-      sex();
-      break;
-
-    case 5 :
-      manual();
-      break;
-    default :
-      break;
-  }
 }
+
+
+
+
 
 void setColour(int red, int green, int blue)
 {
@@ -148,75 +130,77 @@ void setColour(int red, int green, int blue)
 }
 
 
-void LightsOn(void)
-{
-  lightswitch.writeMicroseconds(swon);
-  delay(500);
-  lightswitch.writeMicroseconds(idle);
-}
-
-void LightsOff(void)
-{
-  lightswitch.writeMicroseconds(swoff);
-  delay(500);
-  lightswitch.writeMicroseconds(idle);
-}
+//void LightsOn(void)
+//{
+////  lightswitch.attach(servo_pin);
+//  lightswitch.writeMicroseconds(swon);
+//  delay(500);
+//  lightswitch.writeMicroseconds(idle);
+////  delay(50);
+////  lightswitch.detach();
+//}
+//
+//void LightsOff(void)
+//{
+////  lightswitch.attach(servo_pin);
+//  lightswitch.writeMicroseconds(swoff);
+//  delay(500);
+//  lightswitch.writeMicroseconds(idle);
+////  delay(50);
+////  lightswitch.detach();
+//}
 
 void off(void)
 {
-  LightsOff();
+//  if (LIGHTSON)
+//  {
+//    LightsOff();
+//  }
+//  LIGHTSON = false;
   setColour(0, 0, 0);
-  while (mode == "off") {}
+  
 }
 
 void normal(void)
 {
-  LightsOn();
-  setColour(255, 255, 255);
-  while (mode == "normal") {}
+//  if (!LIGHTSON)
+//  {
+//    LightsOn();
+//  }
+//  LIGHTSON = true;
+  setColour(255, 125, 45);
 }
 
 void party(void)
 {
-  LightsOff();
+//  if (LIGHTSON)
+//  {
+//    LightsOff();
+//  }
+//  LIGHTSON = false;
   while (mode == "party")
   {
-    for (int i = 0; i < 255; i++) //Changing Red brightness
-    {
-      setColour(i, 0, 0);
-      delay (5);
-    }
-    for (int i = 0; i < 255; i++) //Changing Green brightness
-    {
-      setColour(0, i, 0);
-      delay (5);
-    }
-    for (int i = 0; i < 255; i++) //Changing Blue brightness
-    {
-      setColour(0, 0, i);
-      delay (5);
-    }
     for (int i = 0; i < 255; i++)
     {
       setColour(i, 0, 255 - i);
-      delay (5);
+      delay (1);
     }
     for (int i = 0; i < 255; i++)
     {
       setColour(255 - i, i, 0);
-      delay (5);
+      delay (1);
     }
     for (int i = 0; i < 255; i++)
     {
       setColour(0, 255 - i, i);
-      delay (5);
+      delay (1);
     }
   }
 }
 
 void theater(void)
 {
-  LightsOff();
+  //  LightsOff();
   while (mode == "theater")
   {
 
@@ -225,17 +209,8 @@ void theater(void)
 
 void sex(void)
 {
-  LightsOff();
+  //  LightsOff();
   while (mode == "sex")
-  {
-
-  }
-}
-
-void manual(void)
-{
-  LightsOff();
-  while (mode == "manual")
   {
 
   }

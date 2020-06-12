@@ -22,7 +22,7 @@ WidgetTerminal terminal(V5);
 unsigned long alarm_time;
 unsigned long current_time;
 int master; 
-String mode;
+String mode = "";
 int AlarmOnOff;
 int alarmHours;
 int alarmMin;
@@ -42,12 +42,12 @@ BLYNK_WRITE(V0)
   terminal.print("Master: ");
   if (master == 1) {
     
-    Serial.print(mode + " 0");
+    Serial.print(mode);
     terminal.println("On");
   }
   if (master == 2) {
     
-    Serial.print("off 0");
+    Serial.print("off ");
     terminal.println("Off");
   } 
   terminal.println();
@@ -60,18 +60,7 @@ BLYNK_WRITE(V1)
   terminal.clear();
   
   AlarmOnOff = param.asInt(); // assigning incoming value from pin V1 to a variable
-  // You can also use:
-  // String i = param.asStr();
-  // double d = param.asDouble();
-//  Serial.print("Alarm On/Off value is: ");
-//  if (AlarmOnOff == 1) {
-//    Serial.println("Alarm On");
-//    Serial.println(String("Alarm Time: ") + alarm_time);
-//    Serial.println(String("Current Time: ") + current_time);
-//  }
-//  if (AlarmOnOff == 2) {
-//    Serial.println("Alarm Off");
-//  }
+
 
   terminal.print("Alarm: ");
   if (AlarmOnOff == 1) {
@@ -107,7 +96,6 @@ BLYNK_WRITE(V2) {
                    t.getStartMinute());
                    
     alarm_time = (t.getStartHour())*100 + t.getStartMinute();
-    //Serial.println(String("Alarm Time Set: ") + alarm_time);
   }
   else
   {
@@ -130,28 +118,24 @@ BLYNK_WRITE(V3)
   // double d = param.asDouble();
   terminal.print("Mode set to: ");
   if (modeSet == 1) {
-    mode = "normal";
+    mode = "normal ";
     terminal.println("Normal");
   }
   else if (modeSet == 2) {
-    mode = "party";
+    mode = "party ";
     terminal.println("Party");
   }
   else if (modeSet == 3) {
-    mode = "theater";
+    mode = "theater ";
     terminal.println("Theater");
   }
-  else if (modeSet == 4) {
-    mode = "sex";
-    terminal.println("Sex");
-  }
   else {
-    mode = "manual";
-    terminal.println("Manual");
+    mode = "sex ";
+    terminal.println("Sex");
   }
 
   if (master == 1) {
-    Serial.print(mode + " 0");
+    Serial.print(mode);
   }
   
   
@@ -184,7 +168,7 @@ void loop()
   current_time = (timeClient.getHours())*100 + timeClient.getMinutes();
   if ((current_time == alarm_time) && (AlarmOnOff == 1))
   {
-    Serial.print("normal 0");
+    Serial.print("normal ");
     AlarmOnOff = 2;
   }
 }

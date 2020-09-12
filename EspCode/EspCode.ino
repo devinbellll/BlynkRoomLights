@@ -1,4 +1,5 @@
 #define BLYNK_PRINT Serial
+#include <Servo.h>
 
 
 #include <ESP8266WiFi.h>
@@ -23,12 +24,80 @@ unsigned long alarm_time;
 unsigned long current_time;
 int master; 
 String mode = "";
+String prevMode = "";
 int AlarmOnOff;
 int alarmHours;
 int alarmMin;
 
+///// Lightswitch and LED Section /////
+
+// Mode functions
+void romantic(void);
+void theater(void);
+void party(void);
+void off(void);
+void normal(void);
+void setColour(int red, int green, int blue);
+
+int RedPin = D5; //Arduino driving pin for Red, Pin 10 on LED board
+int GreenPin = D6; //Arduino driving pin for Green, Pin 11 on LED board
+int BluePin = D8; //Arduino driving pin for Blue, Pin 9 on LED board
+
+int servo_pin = D2;
+unsigned int swon = 700;
+unsigned int idle = 1300;
+unsigned int swoff = 2300;
+bool LIGHTSON = false;
+
+Servo lightswitch;
+
+void LightsOn(void)
+{
+  lightswitch.writeMicroseconds(swon);
+  delay(500);
+  lightswitch.writeMicroseconds(idle);
+  delay(50);
+}
+
+void LightsOff(void)
+{
+  lightswitch.writeMicroseconds(swoff);
+  delay(500);
+  lightswitch.writeMicroseconds(idle);
+  delay(50);
+}
 
 
+void setColour(int red, int green, int blue)
+{
+  analogWrite(RedPin, red);
+  analogWrite(GreenPin, green);
+  analogWrite(BluePin, blue);
+}
+
+void callMode(void)
+{
+  if (mode == "off")
+  {
+    off();
+  }
+  else if (mode == "normal")
+  {
+    normal();
+  }
+  else if (mode == "party")
+  {
+    party();
+  }
+  else if (mode == "theater")
+  {
+    theater();
+  }
+  else
+  {
+    romantic();
+  }
+}
 //Master On/Off switch
 
 BLYNK_WRITE(V0)
@@ -41,13 +110,17 @@ BLYNK_WRITE(V0)
   // double d = param.asDouble();
   terminal.print("Master: ");
   if (master == 1) {
-    
-    Serial.print(mode);
+    if(mode == "off")
+    {
+      mode = prevMode;
+    }
+    callMode();
     terminal.println("On");
   }
   if (master == 2) {
-    
-    Serial.print("off ");
+    prevMode = mode;
+    mode = "off";
+    callMode();
     terminal.println("Off");
   } 
   terminal.println();
@@ -118,29 +191,81 @@ BLYNK_WRITE(V3)
   // double d = param.asDouble();
   terminal.print("Mode set to: ");
   if (modeSet == 1) {
-    mode = "normal ";
+    mode = "normal";
     terminal.println("Normal");
   }
   else if (modeSet == 2) {
-    mode = "party ";
+    mode = "party";
     terminal.println("Party");
   }
   else if (modeSet == 3) {
-    mode = "theater ";
+    mode = "theater";
     terminal.println("Theater");
   }
   else {
-    mode = "sex ";
-    terminal.println("Sex");
+    mode = "romantic";
+    terminal.println("Romantic");
   }
 
   if (master == 1) {
-    Serial.print(mode);
+    callMode();
   }
   
   
   terminal.println();
   terminal.flush();
+}
+
+void off(void)
+{
+  if (LIGHTSON)
+  {
+    LightsOff();
+  }
+  LIGHTSON = false;
+  setColour(0, 0, 0);
+  
+}
+
+void normal(void)
+{
+  Serial.println("Set to Normal");
+  if (!LIGHTSON)
+  {
+    LightsOn();
+  }
+  LIGHTSON = true;
+  setColour(255, 125, 45);
+}
+
+void party(void)
+{
+  Serial.println("Set to Party");
+  if (LIGHTSON)
+  {
+    LightsOff();
+  }
+  LIGHTSON = false;
+}
+
+void theater(void)
+{
+  Serial.println("Set to Theater");
+  if (LIGHTSON)
+  {
+    LightsOff();
+  }
+  LIGHTSON = false;
+}
+
+void romantic(void)
+{
+  Serial.println("Set to Romantic");
+  if (LIGHTSON)
+  {
+    LightsOff();
+  }
+  LIGHTSON = false;
 }
 
 
@@ -157,6 +282,11 @@ void setup()
 
   timeClient.begin();
 
+  pinMode(RedPin, OUTPUT); //Init Arduino driving pins
+  pinMode(GreenPin, OUTPUT);
+  pinMode(BluePin, OUTPUT);
+  pinMode(servo_pin, OUTPUT);
+  lightswitch.attach(servo_pin);
 }
 
 void loop()
@@ -168,7 +298,54 @@ void loop()
   current_time = (timeClient.getHours())*100 + timeClient.getMinutes();
   if ((current_time == alarm_time) && (AlarmOnOff == 1))
   {
-    Serial.print("normal ");
+    mode = "normal";
+    callMode();
     AlarmOnOff = 2;
+    Serial.println("ALARM");
+  }
+
+  if (mode == "party" && master == 1)
+  {
+    for (int i = 0; i < 255; i++)
+    {
+      setColour(i, 0, 255 - i);
+      delay (1);
+    }
+    for (int i = 0; i < 255; i++)
+    {
+      setColour(255 - i, i, 0);
+      delay (1);
+    }
+    for (int i = 0; i < 255; i++)
+    {
+      setColour(0, 255 - i, i);
+      delay (1);
+    }
+  }
+  else if (mode == "romantic" && master == 1)
+  {
+    for (int i = 0; i <= 185; i++)
+    {
+      setColour(255, 0, 185 - i);
+      delay(20);
+    }
+    for (int i = 0; i <= 185; i++)
+    {
+      setColour(255, 0, i);
+      delay(20);
+    }
+  }
+  else if (mode == "theater" && master == 1)
+  {
+    for (int i = 0; i <= 185; i++)
+    {
+      setColour(0, 185 - i, 255);
+      delay(30);
+    }
+    for (int i = 0; i <= 185; i++)
+    {
+      setColour(0, i, 255);
+      delay(30);
+    }
   }
 }
